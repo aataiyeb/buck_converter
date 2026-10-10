@@ -15,3 +15,7 @@ In CubeIDE, the project has to be opened from the STM32 folder that the CubeMX m
 
 
 Got the Nucleo-G474RE blinking its LED from my own code (first successful build and flash).
+
+
+(PWM)
+Configured TIM1 channel 1 for PWM in CubeMX: prescaler 0, period 3399, pulse 1417, giving 50 kHz at 41.7% duty from the 170 MHz clock. Started the timer with `HAL_TIM_PWM_Start` in `main.c`. The LED blink still works alongside it. Checked at home with an LED and a 220 Ω resistor on D7: it glows steadily. Frequency and duty cycle still to be measured with an oscilloscope in the lab.

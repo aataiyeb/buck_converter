@@ -26,3 +26,31 @@ Video: [blink.MOV](images/blink.MOV)
 ![Successful build](images/build-success.png)
 
 Console output of a successful build.
+
+## 50 kHz PWM output
+
+TIM1 channel 1 outputs the switching signal on PA8 (D7). The timer runs from
+the 170 MHz clock with no prescaler, so the numbers set the frequency and duty:
+
+| Setting | Value | Result |
+| Counter period | 3399 | 170 MHz / 3400 = 50 kHz |
+| Pulse | 1417 | 1417 / 3400 = 41.7 % duty |
+
+The timer is started once from `main.c`; after that the hardware generates
+the waveform on its own.
+
+```c
+HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+```
+
+![CubeMX pinout](images/cubemx-pinout.png)
+
+PA8 configured as TIM1_CH1.
+
+![TIM1 settings](images/tim1-settings.png)
+
+Timer parameter settings.
+
+![Oscilloscope reading](images/pwm-scope.jpg)
+
+Duty cycle test: the LED alternates between 10 % and 90 % duty, showing the timer output can be changed in code. Video: [pwm-duty-test.mp4](images/pwm-duty-test.mp4)
