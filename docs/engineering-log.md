@@ -23,5 +23,5 @@ Configured TIM1 channel 1 for PWM in CubeMX: prescaler 0, period 3399, pulse 141
 12/10/2026 (driver test)
 - Built the IR2104 gate driver section on the breadboard with no MOSFETs fitted, Vs tied to ground for the test. Powered from the lab supply at 12 V with a 50 mA current limit; supply current was 0.003 mA.
 - Oscilloscope (CH1 on IN, CH2 on HO): frequency 50.00 kHz, duty cycle 41.72 %, against 50 kHz and 41.7 % expected. HO swings to about 11.60 V, and its rising edge lags IN slightly, consistent with the datasheet propagation delay.
-- Multimeter: VCC 12 V, VB 11.606 V, SD 3.245 V.
+- Multimeter: VCC 12.001 V, SD 3.245 V, HO average 4.517 V, VB 11.606 V. Supply drew 3mA.
 - The edges show ringing from the probe ground lead; not significant at this stage.

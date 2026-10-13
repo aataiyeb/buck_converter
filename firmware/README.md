@@ -49,8 +49,10 @@ PA8 configured as TIM1_CH1.
 
 ![TIM1 settings](images/tim1-settings.png)
 
-Timer parameter settings.
+### Measured on the oscilloscope
 
-![Oscilloscope reading](images/pwm-scope.jpg)
+D7 measured 50.14 kHz at 41.72 % duty with a 3.36 V amplitude, against 50 kHz, 41.7 % and 3.3 V calculated.
 
-Duty cycle test: the LED alternates between 10 % and 90 % duty, showing the timer output can be changed in code. Video: [pwm-duty-test.mp4](images/pwm-duty-test.mp4)
+![D7 and HO on the oscilloscope](../hardware/images/driver-scope.jpg)
+
+Channel 1 (yellow) is D7, measured at the IR2104's input pin. Channel 2 is the driver's output, covered in the hardware README.
