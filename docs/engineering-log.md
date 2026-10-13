@@ -19,3 +19,9 @@ Got the Nucleo-G474RE blinking its LED from my own code (first successful build 
 
 (PWM)
 Configured TIM1 channel 1 for PWM in CubeMX: prescaler 0, period 3399, pulse 1417, giving 50 kHz at 41.7% duty from the 170 MHz clock. Started the timer with `HAL_TIM_PWM_Start` in `main.c`. The LED blink still works alongside it. Checked at home with an LED and a 220 Ω resistor on D7: it glows steadily. Frequency and duty cycle still to be measured with an oscilloscope in the lab.
+
+12/10/2026 (driver test)
+- Built the IR2104 gate driver section on the breadboard with no MOSFETs fitted, Vs tied to ground for the test. Powered from the lab supply at 12 V with a 50 mA current limit; supply current was 0.003 mA.
+- Oscilloscope (CH1 on IN, CH2 on HO): frequency 50.00 kHz, duty cycle 41.72 %, against 50 kHz and 41.7 % expected. HO swings to about 11.60 V, and its rising edge lags IN slightly, consistent with the datasheet propagation delay.
+- Multimeter: VCC 12 V, VB 11.606 V, SD 3.245 V.
+- The edges show ringing from the probe ground lead; not significant at this stage.
