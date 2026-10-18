@@ -87,3 +87,90 @@ Pin 8 (VB): 11.606 V.
 - SD sits at 3.245 V, above the 3 V threshold but without much margin.
 - The spikes on each edge come from the probe's ground lead and are not
   significant at this stage.
+
+
+## Stage 4C/4D: power stage (Buck 2, body diode as freewheeling diode)
+
+Pin 6 of the IR2104 was moved from ground to the switching node (SW) and the
+power stage was added. Q2's gate is tied to ground, so only its body diode
+conducts. First power-up was at 10 V on a current-limited bench supply, then
+12 V.
+
+### Wiring added
+
+| Connect | To |
+|---|---|
+| Q1 drain | +12V |
+| Q1 gate | pin 7 (HO) through 10 Ω |
+| Q1 source | SW node |
+| Q2 drain | SW node |
+| Q2 gate and source | GND |
+| Pin 6 (VS) | SW node (ground wire from the driver test removed) |
+| L1 (220 µH) | SW node to OUT |
+| 220 µF capacitor | OUT (+) to GND |
+| 470 µF capacitor and 0.1 µF ceramic | across +12V and GND |
+| 10 kΩ pull-down | pin 2 to GND |
+| 10 Ω power resistor | OUT to GND |
+
+### Results at 12 V
+
+| Measurement | Result |
+|---|---|
+| Supply voltage | 12.00 V |
+| Supply current | 0.183 A |
+| Output voltage (multimeter) | 4.3253 V |
+| Output voltage (oscilloscope mean) | 4.323 V |
+| Load resistance (measured) | 10.11 Ω |
+| Output power | 1.850 W |
+| Input power | 2.196 W |
+| **Efficiency** | **84.3 %** |
+| SW high / low level | 12.00 V / -0.600 V |
+| SW frequency and duty cycle | 50.09 kHz, 40.11 % (firmware sets 41.7 %) |
+
+Output power is V² / R = 4.3253² / 10.11. Input power is 12.00 V x 0.183 A.
+At the first power-up (10 V) the supply drew 0.149 A in constant-voltage mode.
+
+![Bench supply at 12 V](images/power-supply-12v.jpg)
+
+Bench supply, channel 1: 12.00 V at 0.183 A, constant-voltage mode. Channels
+2 and 3 are unused.
+
+![Multimeter on OUT](images/power-meter-out.jpg)
+
+Multimeter on the output: 4.3253 V.
+
+![SW and OUT](images/power-scope-12v.jpg)
+
+Channel 1 (yellow) is OUT and channel 2 (cyan) is the switching node. The
+scope was frozen with Run/Stop on a frame where the automatic readings were
+stable. SW swings from 12 V down to -0.6 V, the forward drop of Q2's body
+diode.
+
+### Simulation against measurement
+
+| | Simulation | Measured |
+|---|---|---|
+| Output voltage | 4.45 V | 4.325 V |
+| Duty cycle at SW | 41.7 % | 40.1 % |
+
+The measured output is lower because the IR2104 and Q1 turn on more slowly
+than they turn off, which shortens every pulse (HO was 38.9 % against 41.7 %
+at the input in the driver test), and because of resistance in the inductor
+and the breadboard.
+
+### Where the losses go (estimates)
+
+Total loss is 0.35 W. About 0.15 W is Q2's body diode conducting for 60 % of
+each cycle at 0.6 V. The rest is the driver and gate charge (about 0.06 W),
+the inductor winding (about 0.03 W) and switching and wiring losses. The
+diode is nearly half of the total, which is the case for making Q2 switch
+actively in the synchronous version (Buck 3).
+
+### Notes
+
+- Output ripple was not measured.
+- SW shows ringing at each edge. Much of this comes from the probe's long
+  ground lead, so it is partly a measurement artefact. The oscilloscope's
+  automatic readings jumped between frames because of it.
+- The output is about 0.7 V below the 5 V target. This is an open-loop
+  converter with no feedback, which the next stage adds.

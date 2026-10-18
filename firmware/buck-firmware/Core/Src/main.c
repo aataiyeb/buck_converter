@@ -92,7 +92,15 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
+  /* Soft start: begin at 0 % duty and ramp up to the target over about 140 ms */
+  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  for (uint32_t d = 0; d <= 1410; d += 10)
+  {
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, d);
+    HAL_Delay(1);
+  }
+  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 1417);
 
   /* USER CODE END 2 */
 
