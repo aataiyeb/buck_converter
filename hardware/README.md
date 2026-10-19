@@ -174,3 +174,81 @@ actively in the synchronous version (Buck 3).
   automatic readings jumped between frames because of it.
 - The output is about 0.7 V below the 5 V target. This is an open-loop
   converter with no feedback, which the next stage adds.
+
+  ## Stage 5: voltage feedback
+
+A voltage divider brings the output down to a range the Nucleo's ADC can read.
+The ratio is 5.1 / (10 + 5.1) = 0.3377, so 5 V at the output is about 1.69 V
+at the ADC pin. The 100 nF capacitor smooths the switching ripple and gives
+the ADC's sampling capacitor a reservoir to draw from.
+
+| Connect | To |
+|---|---|
+| 10 kΩ | OUT to the ADC row |
+| 5.1 kΩ | ADC row to GND |
+| 100 nF ceramic | ADC row to GND |
+| Wire | ADC row to Nucleo A0 (PA0, ADC1 channel 1) |
+
+![Closed-loop setup](images/loop-setup.jpg)
+
+The full setup in the lab, with the 10 Ω power resistor connected through
+crocodile clips.
+
+### Results at 12 V, closed loop
+
+| Measurement | Result |
+|---|---|
+| Supply voltage | 12.00 V |
+| Supply current | 0.218 A (first photo) and 0.223 A (line-regulation run) |
+| Target output | 5.000 V |
+| Output (multimeter) | 4.9878 V (0.24 % below target) |
+| Output (Nucleo's own ADC reading) | about 4.99 V |
+| Duty cycle chosen by the controller | 47.2 % (open loop at 41.7 % gave 4.325 V) |
+| Load resistance (measured) | 10.11 Ω |
+| Output power | 2.461 W |
+| Input power | 2.62 to 2.68 W |
+| **Efficiency** | **about 92 %** (92.0 % at 0.223 A, 94.1 % at 0.218 A) |
+
+![Output on the multimeter](images/loop-meter-out.jpg)
+
+Multimeter on OUT: 4.9878 V.
+
+![Supply display](images/loop-supply.jpg)
+
+Bench supply: 12.00 V at 0.218 A, constant-voltage mode.
+
+### Line regulation
+
+The input voltage was stepped from 11 V to 14 V with the same 10.11 Ω load.
+
+| Input voltage | 11 V | 12 V | 13 V | 14 V |
+|---|---|---|---|---|
+| Output (multimeter) | 4.9925 V | 4.9878 V | 4.9851 V | 4.9880 V |
+| Supply current | 0.293 A | 0.223 A | 0.205 A | 0.190 A |
+| Duty cycle | 51.3 % | 47.3 % | 43.8 % | 40.7 % |
+| Output power | 2.465 W | 2.461 W | 2.458 W | 2.461 W |
+| Input power | 3.223 W | 2.676 W | 2.665 W | 2.660 W |
+| Efficiency | 76.5 % (suspect) | 92.0 % | 92.2 % | 92.5 % |
+
+The output stays within 7.4 mV of 4.99 V across the whole range, about
+2.5 mV per volt of input (0.05 % per volt), while the controller cuts the duty
+cycle from 51.3 % to 40.7 % to compensate. Duty cycle multiplied by input
+voltage stays close to 5.7 V throughout, as the theory predicts.
+
+![Line regulation](../test-data/line_regulation.png)
+
+Output voltage and duty cycle against input voltage.
+
+
+### Notes on the measurements
+
+- The 11 V input current (0.293 A) looks too high. It implies 76 % efficiency
+  against about 92 % at the other three voltages, and about 0.04 A more than
+  the duty cycle predicts. I did not identify the cause. It may be a reading
+  taken before the loop had settled, and it should be re-measured.
+- The supply's current display resolves 1 mA and wandered by a few mA between
+  readings (0.218 A and 0.223 A at 12 V), which moves the efficiency by about
+  2 points. I quote about 92 %, and the uncertainty is several points. The
+  synchronous stage will measure input current with the multimeter so that
+  both versions are compared in the same way.
+- Output ripple was not measured.

@@ -34,3 +34,14 @@ Configured TIM1 channel 1 for PWM in CubeMX: prescaler 0, period 3399, pulse 141
 - SW: 12.00 V high, -0.600 V low, 50.09 kHz, 40.11 % duty, against 41.7 % set in firmware. Output is below the simulation's 4.45 V because the real pulse is shorter.
 - The oscilloscope's automatic readings jumped between frames because of ringing on the edges, so I froze a frame with Run/Stop where they were stable.
 - Open-loop output is about 0.7 V short of 5 V. The next stage closes the loop.
+
+19/10/2026 (closed loop)
+- Added a voltage divider (10 kΩ and 5.1 kΩ) and a 100 nF capacitor from OUT to the Nucleo's A0 (PA0, ADC1 channel 1). Divider ratio 5.1 / 15.1 = 0.3377.
+- Configured ADC1 in CubeMX: 12-bit, software trigger, 92.5-cycle sampling, synchronous clock divided by 4.
+- Wrote a 1 kHz PI controller in main.c: Kp 0.002, Ki 10, duty limited to 55 %, target soft-started over 100 ms, and a latching shutdown above 5.8 V. Serial output logs time, target, measured and duty every 5 ms.
+- The first flash didn't take: the serial window stayed blank and the LED still blinked fast. Flashing again fixed it.
+- At 12.00 V in with the 10.11 ohm load: output 4.9878 V on the multimeter against a 5.000 V target (0.24 % low), duty 47.2 %, supply current 0.218 A. The Nucleo's own reading averaged about 4.99 V, so the divider ratio needed no correction.
+- Startup captured over serial: the output follows the ramp and reaches 5 V in about 0.1 s with no visible overshoot.
+- Efficiency from the supply display came out between 92 and 94 % depending on which current reading I use (0.223 A or 0.218 A at 12 V). The duty cycle predicts an input current of about 0.23 A, which supports the higher reading, so I quote about 92 %. The synchronous stage will measure input current with the multimeter.
+- Line-regulation test at 11, 12, 13 and 14 V input with the 10.11 ohm load: output 4.9925, 4.9878, 4.9851 and 4.9880 V, a 7.4 mV spread or about 2.5 mV per volt of input, with the duty cycle falling from 51.3 % to 40.7 % to compensate.
+- Input current at 12, 13 and 14 V gives 92.0, 92.2 and 92.5 % efficiency. The 11 V reading (0.293 A, 76 %) looks wrong and needs re-measuring; I don't know why it is off.

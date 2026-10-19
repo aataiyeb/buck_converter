@@ -21,6 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdio.h>
 
 /* USER CODE END Includes */
 
@@ -31,6 +32,16 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define VREF_V      3.3f      /* ADC reference voltage */
+#define ADC_FULL    4095.0f   /* 12-bit full scale */
+#define DIV_RATIO   0.3377f   /* 5.1k / (10k + 5.1k) */
+#define V_TARGET    5.0f      /* regulated output, volts */
+#define V_TRIP      5.8f      /* above this the output shuts off until RESET */
+#define PWM_COUNTS  3400.0f   /* TIM1 counts per period (period register 3399 + 1) */
+#define DUTY_MAX    0.55f     /* hard limit on duty cycle */
+#define KP          0.002f    /* proportional gain: duty per volt of error */
+#define KI          10.0f     /* integral gain: duty per volt-second */
+#define TS          0.001f    /* control period in seconds (1 kHz) */
 
 /* USER CODE END PD */
 
@@ -42,9 +53,12 @@
 /* Private variables ---------------------------------------------------------*/
 
 COM_InitTypeDef BspCOMInit;
+ADC_HandleTypeDef hadc1;
+
 TIM_HandleTypeDef htim1;
 
 /* USER CODE BEGIN PV */
+extern UART_HandleTypeDef hcom_uart[COMn];
 
 /* USER CODE END PV */
 
@@ -52,13 +66,32 @@ TIM_HandleTypeDef htim1;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+/* Average of 16 ADC readings, scaled back up through the divider to real volts */
+static float read_vout(void)
+{
+  uint32_t sum = 0;
+  for (int i = 0; i < 16; i++)
+  {
+    HAL_ADC_Start(&hadc1);
+    HAL_ADC_PollForConversion(&hadc1, 1);
+    sum += HAL_ADC_GetValue(&hadc1);
+  }
+  float v_pin = ((float)sum / 16.0f) * VREF_V / ADC_FULL;
+  return v_pin / DIV_RATIO;
+}
 
+/* Set the PWM duty cycle as a fraction, 0.0 to 1.0 */
+static void set_duty(float duty)
+{
+  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, (uint32_t)(duty * PWM_COUNTS));
+}
 /* USER CODE END 0 */
 
 /**
@@ -91,17 +124,18 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_TIM1_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
-  /* Soft start: begin at 0 % duty and ramp up to the target over about 140 ms */
-  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+  HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
+  set_duty(0.0f);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-  for (uint32_t d = 0; d <= 1410; d += 10)
-  {
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, d);
-    HAL_Delay(1);
-  }
-  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 1417);
 
+  float vref = 0.0f;        /* target voltage, ramped up slowly (soft start) */
+  float integral = 0.0f;    /* running total for the integral term */
+  float duty = 0.0f;
+  uint8_t tripped = 0;
+  uint32_t last_tick = HAL_GetTick();
+  uint32_t loop_count = 0;
   /* USER CODE END 2 */
 
   /* Initialize led */
@@ -129,8 +163,51 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  HAL_GPIO_TogglePin(LED2_GPIO_PORT, LED2_PIN);
-	  HAL_Delay(100);
+	  if (HAL_GetTick() - last_tick >= 1)          /* runs once per millisecond */
+	  {
+	    last_tick++;
+	    loop_count++;
+
+	    float vout = read_vout();
+
+	    if (vout > V_TRIP)
+	    {
+	      tripped = 1;                             /* latched until RESET */
+	    }
+
+	    if (tripped)
+	    {
+	      duty = 0.0f;
+	      integral = 0.0f;
+	      HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_SET);   /* LED solid = tripped */
+	    }
+	    else
+	    {
+	      if (vref < V_TARGET) vref += 0.05f;      /* soft start: 0 to 5 V over 100 ms */
+	      if (vref > V_TARGET) vref = V_TARGET;
+
+	      float error = vref - vout;
+	      integral += KI * TS * error;
+	      if (integral < 0.0f)     integral = 0.0f;
+	      if (integral > DUTY_MAX) integral = DUTY_MAX;   /* anti-windup */
+
+	      duty = KP * error + integral;
+	      if (duty < 0.0f)     duty = 0.0f;
+	      if (duty > DUTY_MAX) duty = DUTY_MAX;
+
+	      if (loop_count % 250 == 0) HAL_GPIO_TogglePin(LED2_GPIO_PORT, LED2_PIN);  /* heartbeat */
+	    }
+
+	    set_duty(duty);
+
+	    if (loop_count % 5 == 0)                   /* log 200 lines per second */
+	    {
+	      char msg[40];
+	      int n = snprintf(msg, sizeof(msg), "%lu,%d,%d,%d\r\n", (unsigned long)HAL_GetTick(),
+	                       (int)(vref * 1000.0f), (int)(vout * 1000.0f), (int)(duty * 1000.0f));
+	      HAL_UART_Transmit(&hcom_uart[COM1], (uint8_t *)msg, n, 10);
+	    }
+	  }
   }
   /* USER CODE END 3 */
 }
@@ -179,6 +256,74 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief ADC1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC1_Init(void)
+{
+
+  /* USER CODE BEGIN ADC1_Init 0 */
+
+  /* USER CODE END ADC1_Init 0 */
+
+  ADC_MultiModeTypeDef multimode = {0};
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC1_Init 1 */
+
+  /* USER CODE END ADC1_Init 1 */
+
+  /** Common config
+  */
+  hadc1.Instance = ADC1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.GainCompensation = 0;
+  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc1.Init.LowPowerAutoWait = DISABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+  hadc1.Init.OversamplingMode = DISABLE;
+  if (HAL_ADC_Init(&hadc1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure the ADC multi-mode
+  */
+  multimode.Mode = ADC_MODE_INDEPENDENT;
+  if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_1;
+  sConfig.Rank = ADC_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_92CYCLES_5;
+  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset = 0;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC1_Init 2 */
+
+  /* USER CODE END ADC1_Init 2 */
+
 }
 
 /**

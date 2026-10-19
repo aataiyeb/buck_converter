@@ -8,9 +8,9 @@ The CubeIDE project lives in `buck-firmware/`.
 ## Status
 
 - [x] LED blink (confirms the toolchain, build and flash all work)
-- [ ] 50 kHz PWM output on TIM1
-- [ ] ADC reading of the output voltage
-- [ ] PI controller
+- [x] 50 kHz PWM output on TIM1
+- [x] ADC reading of the output voltage
+- [x] PI controller
 
 ## LED blink
 
@@ -56,3 +56,49 @@ D7 measured 50.14 kHz at 41.72 % duty with a 3.36 V amplitude, against 50 kHz, 4
 ![D7 and HO on the oscilloscope](../hardware/images/driver-scope.jpg)
 
 Channel 1 (yellow) is D7, measured at the IR2104's input pin. Channel 2 is the driver's output, covered in the hardware README.
+
+## Closed-loop voltage control
+
+A PI controller runs once per millisecond. It reads the output through the
+ADC (average of 16 samples), compares it with a 5 V target, and sets the PWM
+duty cycle so the output stays at the target.
+
+| Setting | Value | What it does |
+|---|---|---|
+| Control rate | 1 kHz | one measurement and update per millisecond |
+| KP | 0.002 | proportional gain, duty per volt of error |
+| KI | 10 | integral gain, duty per volt-second |
+| Soft start | 100 ms | the target ramps from 0 to 5 V |
+| Duty limit | 55 % | the controller can never ask for more |
+| Over-voltage trip | 5.8 V | above this the output shuts off until RESET |
+| Divider ratio | 0.3377 | 5.1 kΩ / (10 kΩ + 5.1 kΩ) |
+
+The gains are deliberately small, to keep the loop well clear of the 700 Hz
+resonance of the output inductor and capacitor. The integral term is clamped
+to the duty limit so it cannot wind up. The ADC is configured in CubeMX as
+12-bit with a 92.5-cycle sampling time, because the divider has a source
+resistance of about 3.4 kΩ.
+
+![CubeMX ADC settings](images/cubemx-adc.png)
+
+ADC1 settings in CubeMX.
+
+The firmware prints one line every 5 ms over the USB virtual serial port:
+time in ms, target in mV, measured output in mV, duty in tenths of a percent.
+
+![Serial output](../test-data/serial-regulating.png)
+
+Serial output once the output is regulating: measured value within about
+10 mV of the 5000 mV target, duty settled at 47.2 %.
+
+### Startup
+
+![Startup](../test-data/loop_startup.png)
+
+The output follows the ramping target and reaches 5 V in about 0.1 s with no
+visible overshoot. A brief dip of about 20 mV near 0.9 s appears in this
+capture; I did not identify the cause.
+
+The PI controller code was written with help from Claude. I built, flashed
+and tested it on the hardware, and the gains and limits above are the
+values I ran.
