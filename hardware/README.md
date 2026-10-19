@@ -175,7 +175,7 @@ actively in the synchronous version (Buck 3).
 - The output is about 0.7 V below the 5 V target. This is an open-loop
   converter with no feedback, which the next stage adds.
 
-  ## Stage 5: voltage feedback
+## Stage 5: voltage feedback
 
 A voltage divider brings the output down to a range the Nucleo's ADC can read.
 The ratio is 5.1 / (10 + 5.1) = 0.3377, so 5 V at the output is about 1.69 V
@@ -248,9 +248,7 @@ Output voltage and duty cycle against input voltage.
   taken before the loop had settled, and it should be re-measured.
 - The supply's current display resolves 1 mA and wandered by a few mA between
   readings (0.218 A and 0.223 A at 12 V), which moves the efficiency by about
-  2 points. I quote about 92 %, and the uncertainty is several points. The
-  synchronous stage will measure input current with the multimeter so that
-  both versions are compared in the same way.
+  2 points. I quote about 92 %, and the uncertainty is several points. I intended to measure input current with the multimeter in the synchronous stage, but did not get to it (see the Stage 6 notes).
 - Output ripple was not measured.
 
 ## Stage 6: synchronous rectification
