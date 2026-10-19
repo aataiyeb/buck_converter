@@ -11,6 +11,7 @@ The CubeIDE project lives in `buck-firmware/`.
 - [x] 50 kHz PWM output on TIM1
 - [x] ADC reading of the output voltage
 - [x] PI controller
+- [x] Gate-driver shutdown pin (`SD_EN`, PA9) controlled by the firmware
 
 ## LED blink
 
@@ -102,3 +103,24 @@ capture; I did not identify the cause.
 The PI controller code was written with help from Claude. I built, flashed
 and tested it on the hardware, and the gains and limits above are the
 values I ran.
+
+## Gate-driver shutdown (synchronous version)
+
+PA9 (Arduino pin D8) is configured as a push-pull output labelled `SD_EN`,
+starting low, and connects to the IR2104's shutdown pin. The firmware sets it
+high only after the PWM is running at 0 % duty, and sets it low on the over-voltage
+trip, which switches both MOSFETs off.
+
+```c
+/* after the PWM has started, at the end of USER CODE 2 */
+HAL_GPIO_WritePin(SD_EN_GPIO_Port, SD_EN_Pin, GPIO_PIN_SET);
+
+/* in the control loop, on a trip */
+HAL_GPIO_WritePin(SD_EN_GPIO_Port, SD_EN_Pin, GPIO_PIN_RESET);
+```
+
+The controller gains are unchanged from the diode version.
+
+![CubeMX GPIO settings](images/cubemx-sd-en.png)
+
+PA9 configured as `SD_EN`.

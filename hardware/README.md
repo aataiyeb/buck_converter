@@ -252,3 +252,77 @@ Output voltage and duty cycle against input voltage.
   synchronous stage will measure input current with the multimeter so that
   both versions are compared in the same way.
 - Output ripple was not measured.
+
+## Stage 6: synchronous rectification
+
+In Buck 2 the low-side MOSFET (Q2) had its gate tied to ground, so only its
+body diode carried the inductor current while Q1 was off. That diode drops
+about 0.6 V at 0.5 A, for more than half of every cycle, which costs roughly
+0.14 W. In Buck 3 the IR2104's LO output drives Q2's gate, so Q2 switches on
+while Q1 is off. LO is the inverse of the input, with a built-in dead time
+between the two outputs so Q1 and Q2 are never on together.
+
+### Wiring changes
+
+| Connect | To |
+|---|---|
+| Q2 gate | no longer tied to GND. IR2104 pin 5 (LO) through 10 Ω |
+| 10 kΩ pull-down | Q2 gate to GND (keeps Q2 off if the LO wire comes loose) |
+| IR2104 pin 3 (SD) | Nucleo D8 (PA9, `SD_EN`), previously 3V3 |
+| 10 kΩ pull-down | pin 3 to GND (the driver is off while the Nucleo is reset or unpowered) |
+
+### Why the shutdown pin is controlled by the firmware
+
+With LO driving Q2, "no PWM" does not mean "everything off": with the input
+low, LO goes high and Q2 turns fully on. If that happens while the output
+capacitor is charged (a reset, or the 5.8 V trip), Q2 shorts the inductor to
+ground and the capacitor discharges through it. A simple model of the output
+stage, not included in this repo, predicts a reverse inductor current of about
+3.6 A in that case, even with an ideal inductor. The IR2104's shutdown pin
+turns both outputs off, so the firmware raises it only once the PWM is running,
+and drops it on a trip. The pull-down keeps it low through a reset.
+
+### Results
+
+| | Buck 2 (earlier the same day) | Buck 3 |
+|---|---|---|
+| Supply voltage | 12.00 V | 11.99 V |
+| Supply current | 0.218 to 0.223 A | 0.212 A |
+| Output (multimeter) | 4.9878 V | 4.9740 V |
+| Duty cycle chosen by the controller | 47.2 to 47.3 % | 43.9 % |
+| Output power (10.11 Ω load) | 2.461 W | 2.447 W |
+| Input power | 2.62 to 2.68 W | 2.542 W |
+| Efficiency | 92.0 to 94.1 % | **96.3 %** |
+
+A simple model of the converter predicted the duty cycle falling from about
+46.7 % to 44.3 %, the supply current falling by about 12 mA, and the
+efficiency rising by about 5 points. The measured duty cycle fell by 3.4
+points and the efficiency rose by 2 to 4 points depending on which Buck 2
+reading is used.
+
+![Buck 3 setup](images/sync-setup.jpg)
+
+The board with Q2's gate driven from LO.
+
+![Output voltage](images/sync-meter-out.jpg)
+
+Multimeter on OUT: 4.9740 V.
+
+![Supply display](images/sync-supply.jpg)
+
+Bench supply: 11.99 V at 0.212 A, constant-voltage mode.
+
+### Notes on the measurements
+
+- The efficiency comes from the supply's current display, which resolves 1 mA
+  but wandered by several mA between readings (0.218 A and 0.223 A at 12 V in
+  Buck 2). That is worth 2 to 4 points of efficiency, so the figure is
+  accurate to a few points. The duty cycle, which comes straight from the
+  controller, is the cleaner evidence that Q2 is switching.
+- Buck 2 and Buck 3 were not compared back to back in one session. The Buck 2
+  numbers are from earlier the same day with the same load.
+- The output is 0.5 % below the 5.000 V target on the multimeter, and the
+  Nucleo's own reading sits about 17 mV below target with a flat duty cycle.
+  An integral controller should remove a steady error like this, and I have
+  not found the cause.
+- Output ripple, and the voltage on the switching node, were not measured.

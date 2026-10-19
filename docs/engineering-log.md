@@ -45,3 +45,13 @@ Configured TIM1 channel 1 for PWM in CubeMX: prescaler 0, period 3399, pulse 141
 - Efficiency from the supply display came out between 92 and 94 % depending on which current reading I use (0.223 A or 0.218 A at 12 V). The duty cycle predicts an input current of about 0.23 A, which supports the higher reading, so I quote about 92 %. The synchronous stage will measure input current with the multimeter.
 - Line-regulation test at 11, 12, 13 and 14 V input with the 10.11 ohm load: output 4.9925, 4.9878, 4.9851 and 4.9880 V, a 7.4 mV spread or about 2.5 mV per volt of input, with the duty cycle falling from 51.3 % to 40.7 % to compensate.
 - Input current at 12, 13 and 14 V gives 92.0, 92.2 and 92.5 % efficiency. The 11 V reading (0.293 A, 76 %) looks wrong and needs re-measuring; I don't know why it is off.
+
+(synchronous stage)
+- Switched to synchronous rectification: removed the wire tying Q2's gate to ground, drove it from the IR2104's LO pin through 10 ohm, and added a 10 kohm pull-down on the gate.
+- Moved the IR2104's shutdown pin from the Nucleo's 3V3 to D8 (PA9, label SD_EN) with a 10 kohm pull-down, so the driver is off through reset and trips. Reason: with LO driving Q2, "no PWM" turns Q2 fully on, which would short the inductor across a charged output capacitor. A simple model predicted a reverse current of about 3.6 A in that case.
+- Pre-power continuity check: Q2's gate row read about 20 ohm to ground with the LO resistor in and 10 kohm with it removed. [Replace with what you found and fixed, and leave out this line if you never found the cause.]
+- First power-up gave no output because I had not plugged in the D7 PWM wire. After fixing it the converter regulated.
+- Buck 3 at 11.99 V: output 4.9740 V on the multimeter, supply current 0.212 A, duty 43.9 % (47.2 % with the body diode), efficiency about 96 % (output 2.447 W, input 2.542 W, load 10.11 ohm).
+- The model predicted duty 44.3 %, 12 mA less input current and about 5 points more efficiency. The duty cycle fell more than predicted. The efficiency gain is 2 to 4 points depending on which Buck 2 current reading is used, because the supply's current display wanders by several mA.
+- Did not do a back-to-back Buck 2 comparison in this session, did not measure input current with the multimeter, and did not test pressing RESET while regulating.
+- The output sits 0.5 % under target on the multimeter with a flat duty cycle, which an integral controller should not allow. Cause not found.

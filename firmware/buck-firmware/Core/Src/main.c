@@ -136,6 +136,10 @@ int main(void)
   uint8_t tripped = 0;
   uint32_t last_tick = HAL_GetTick();
   uint32_t loop_count = 0;
+
+  /* Enable the gate driver only now. PWM is running at 0 % and the output is at 0 V.
+     Through reset and boot, the pull-down on pin 3 keeps the driver off. */
+  HAL_GPIO_WritePin(SD_EN_GPIO_Port, SD_EN_Pin, GPIO_PIN_SET);
   /* USER CODE END 2 */
 
   /* Initialize led */
@@ -177,9 +181,10 @@ int main(void)
 
 	    if (tripped)
 	    {
+	      HAL_GPIO_WritePin(SD_EN_GPIO_Port, SD_EN_Pin, GPIO_PIN_RESET);   /* driver off: both MOSFETs off */
 	      duty = 0.0f;
 	      integral = 0.0f;
-	      HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_SET);   /* LED solid = tripped */
+	      HAL_GPIO_WritePin(LED2_GPIO_PORT, LED2_PIN, GPIO_PIN_SET);       /* LED solid = tripped */
 	    }
 	    else
 	    {
@@ -415,6 +420,7 @@ static void MX_TIM1_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
   /* USER CODE BEGIN MX_GPIO_Init_1 */
 
   /* USER CODE END MX_GPIO_Init_1 */
@@ -424,6 +430,16 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(SD_EN_GPIO_Port, SD_EN_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : SD_EN_Pin */
+  GPIO_InitStruct.Pin = SD_EN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(SD_EN_GPIO_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
