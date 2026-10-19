@@ -9,7 +9,7 @@ Installed CubeIDE, LTspice and GitHub Desktop; Nucleo recognised as STLINK-V3
 
 Output settled at about 4.45V rather than 5V because of the diode drop. 
 
-Output voltage ripple was about 16mV.The output overshoots at startup before it settles.
+Output voltage ripple was about 16mV. The output overshoots at startup before it settles.
 
 In CubeIDE, the project has to be opened from the STM32 folder that the CubeMX made, instead of the whole firmware folder. The build option on CubeIDE wasn't available because of it. And, I made a mistake while naming the pin name in main.c, and then I debugged it using the console.
 
@@ -46,7 +46,7 @@ Configured TIM1 channel 1 for PWM in CubeMX: prescaler 0, period 3399, pulse 141
 - Line-regulation test at 11, 12, 13 and 14 V input with the 10.11 ohm load: output 4.9925, 4.9878, 4.9851 and 4.9880 V, a 7.4 mV spread or about 2.5 mV per volt of input, with the duty cycle falling from 51.3 % to 40.7 % to compensate.
 - Input current at 12, 13 and 14 V gives 92.0, 92.2 and 92.5 % efficiency. The 11 V reading (0.293 A, 76 %) looks wrong and needs re-measuring; I don't know why it is off.
 
-(synchronous stage)
+## 2026-10-19 (synchronous stage)
 - Switched to synchronous rectification: removed the wire tying Q2's gate to ground, drove it from the IR2104's LO pin through 10 ohm, and added a 10 kohm pull-down on the gate.
 - Moved the IR2104's shutdown pin from the Nucleo's 3V3 to D8 (PA9, label SD_EN) with a 10 kohm pull-down, so the driver is off through reset and trips. Reason: with LO driving Q2, "no PWM" turns Q2 fully on, which would short the inductor across a charged output capacitor. A simple model predicted a reverse current of about 3.6 A in that case.
 - Pre-power continuity check: Q2's gate row read about 20 ohm to ground with the LO resistor in and 10 kohm with it removed. [Replace with what you found and fixed, and leave out this line if you never found the cause.]

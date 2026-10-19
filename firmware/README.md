@@ -1,8 +1,7 @@
 # Firmware
 
 Firmware for the buck converter, running on an STM32G474 (Nucleo-G474RE).
-The project is generated with STM32CubeMX, and the application code is
-written by hand inside the `USER CODE` sections of `main.c`.
+The project is generated with STM32CubeMX, and the application code has been using Claude as guidance, inside the `USER CODE` sections of `main.c`.
 The CubeIDE project lives in `buck-firmware/`.
 
 ## Status
