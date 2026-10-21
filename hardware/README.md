@@ -219,7 +219,7 @@ Bench supply: 12.00 V at 0.218 A, constant-voltage mode.
 
 ### Line regulation
 
-The input voltage was stepped from 11 V to 14 V with the same 10.11 Ω load.
+The input voltage was stepped from 11 V to 14 V with the same 10.11 Ω load on the body-diode version, before the synchronous change.
 
 | Input voltage | 11 V | 12 V | 13 V | 14 V |
 |---|---|---|---|---|

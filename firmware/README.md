@@ -95,9 +95,7 @@ Serial output once the output is regulating: measured value within about
 
 ![Startup](../test-data/loop_startup.png)
 
-The output follows the ramping target and reaches 5 V in about 0.1 s with no
-visible overshoot. A brief dip of about 20 mV near 0.9 s appears in this
-capture; I did not identify the cause.
+The output follows the ramping target and reaches 5 V in about 0.1 s with no visible overshoot (body diode version). A brief dip of about 20 mV near 0.9 s appears in this capture; I did not identify the cause.
 
 The PI controller code was written with help from Claude. I built, flashed
 and tested it on the hardware, and the gains and limits above are the

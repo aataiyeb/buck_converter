@@ -12,9 +12,10 @@ each one, and measured it on bench equipment.
 
 | | |
 |---|---|
-| Regulation (12 V in, 10.11 Ω load) | 4.9878 V measured, 0.24 % below the 5.000 V target |
-| Line regulation (11 to 14 V in) | output varies by 7.4 mV while the duty cycle falls from 51.3 % to 40.7 % |
-| Start-up | reaches 5 V in about 0.1 s with no visible overshoot |
+| Regulation, body-diode version (12 V in, 10.11 Ω load) | 4.9878 V measured, 0.24 % below the 5.000 V target |
+| Regulation, synchronous version (11.99 V in) | 4.9740 V measured, 0.5 % below the target |
+| Line regulation, body-diode version (11 to 14 V in) | output varies by 7.4 mV while the duty cycle falls from 51.3 % to 40.7 % |
+| Start-up, body-diode version | reaches 5 V in about 0.1 s with no visible overshoot |
 | Efficiency, body-diode version | about 92 % |
 | Efficiency, synchronous version | about 96 % |
 
@@ -25,7 +26,7 @@ cleaner evidence of the improvement.
 
 ![Start-up](test-data/loop_startup.png)
 
-Output voltage following the 100 ms soft-start ramp, captured over serial.
+Output voltage following the 100 ms soft-start ramp on the body-diode version, captured over serial.
 
 ![The finished board](hardware/images/sync-setup.jpg)
 

@@ -19,7 +19,7 @@ With Q2 switching, the controller holds the output with a duty cycle of 43.9 %, 
 
 ![Line regulation](line_regulation.png)
 
-Output voltage stays flat while the duty cycle falls as the input rises.
+Output voltage stays flat while the duty cycle falls as the input rises (body-diode version).
 
 ![Startup](loop_startup.png)
 
